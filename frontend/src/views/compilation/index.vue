@@ -55,6 +55,7 @@
             >
               {{ action }}
             </button>
+            <button class="link" type="button" @click="fetchSource(row)">蒸发取数</button>
           </td>
         </tr>
         <tr v-if="!rows.length">
@@ -75,6 +76,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import {
   downloadEntries,
+  fetchCompilationSource,
   listEntries,
   moduleMeta,
   runAction as applyAction,
@@ -119,6 +121,13 @@ function runAction(action: string, row: EntryRow) {
     errorMessage.value = result.message
     return
   }
+  reload()
+}
+
+function fetchSource(row: EntryRow) {
+  errorMessage.value = ''
+  const result = fetchCompilationSource(Number(row.id))
+  errorMessage.value = result.message
   reload()
 }
 

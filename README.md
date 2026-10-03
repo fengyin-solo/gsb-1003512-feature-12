@@ -13,9 +13,10 @@
 .
 ├── frontend/                 Vue 3 + Vite + TypeScript 前端（唯一运行单元）
 │   ├── src/views/            每个业务模块一个页面
-│   ├── src/api/local-service.ts   本地数据服务：列表、筛选、动作流转、导出
+│   ├── src/api/local-service.ts   本地数据服务：列表、筛选、动作流转、补录、取数、导出
+│   ├── src/domain/           职责边界鉴权、蒸发观测规则、现场校验待办（业务判断集中在此）
 │   ├── src/data/             模块元数据 / 示例数据 / localStorage 持久化
-│   ├── src/stores/           会话与筛选状态
+│   ├── src/stores/           会话、角色与班次状态
 │   └── vite.config.ts        dev server 配置（open: false，无 /api 代理）
 ├── .gitignore
 └── docker-compose.yml
@@ -61,11 +62,35 @@ npm run build
 | 巡检记录 | `inspection` | 巡检记录 | 记录编号、站点编号、巡检日期 |
 | 测报方案 | `plan` | 测报方案 | 方案编号、方案名称、适用范围 |
 
+## 蒸发观测职责边界
+
+页面顶部可切换「记录人 / 复核人 / 外站人员」角色与值班班次，规则在 service 层强制执行，
+页面按钮显隐只是辅助（直接调用 service 同样被拒）：
+
+- **记录人（observer）**：只能登记记录、补录**本班次**的蒸发量与水温/气温/风速四项读数、
+  提交本班次记录；跨班补录/提交、复核人动作一律拒绝。
+- **复核人（reviewer）**：可确认通过、退回补录、标记异常；**不能修改或补录原始读数**，
+  也不能代替记录人提交。
+- **外站人员（outsider）**：只读，任何写动作都返回拒绝。
+
+配套流转规则：
+
+- 提交审核时，水温、气温、风速三项**缺一项即进入「待核」**（而不是直接退回），三项齐全进
+  「待审核」；蒸发量本身缺失不允许提交。待核记录由复核人决定退回补录或带条件通过，现场校验兜底。
+- **退回补录**会清空复核人、复核结论、复核意见等中间结论，但原始读数原样保留。
+- 旧记录没有「所属班次」字段时，按观测日期**兼容解析为白班**，原始行不写回，列表中标注
+  「旧记录兼容」。
+- **复核通过**后在巡检记录模块生成一条「现场校验」待办（状态待巡检），同一来源记录重复通过
+  不重复建单；其他业务模块（水位、流量、断面等）的通过/校核/验收类终态动作走同一入口，
+  同样生成现场校验待办。
+- 数据整编的「蒸发取数」只统计**已复核通过**且整编年份、站点匹配的蒸发记录数，回填
+  「原始记录数」；待核、退回、异常记录不进整编。
+
 ## 约定
 
 - 每个模块的页面在 `frontend/src/views/<模块>/index.vue`，页面只负责渲染，读写统一走
-  `frontend/src/api/local-service.ts`。
+  `frontend/src/api/local-service.ts`，鉴权与业务规则在 `frontend/src/domain/`。
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
-- 想回到初始数据：清掉浏览器里 `hydrology-monitor-station:entries` 这一项，或调用 `resetModule(模块)`。
+- 想回到初始数据：清掉浏览器里 `hydrology-monitor-station:entries:v2` 这一项，或调用 `resetModule(模块)`。

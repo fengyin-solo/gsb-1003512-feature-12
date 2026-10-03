@@ -18,6 +18,8 @@ export type ModuleMeta = {
   actions: string[]
   actionTargets: Record<string, string>
   metrics: string[]
+  // 已办结状态：落到这些状态的记录不再算待办；不填时沿用「最后一个状态」。
+  terminalStatuses?: string[]
 }
 
 export type PageResult = {

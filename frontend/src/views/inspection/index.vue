@@ -3,7 +3,7 @@
     <header class="page-head">
       <div>
         <h2>巡检记录管理</h2>
-        <p class="page-desc">维护巡检记录，围绕记录编号、站点编号、巡检日期、巡检人员做登记、筛选与状态流转。</p>
+        <p class="page-desc">维护巡检记录；各业务模块复核通过后自动生成「现场校验」待办，安排现场核对数据与设备状态。</p>
       </div>
       <div class="page-actions">
         <button class="btn primary" type="button" @click="openCreate">登记巡检记录</button>
@@ -43,7 +43,7 @@
       </thead>
       <tbody>
         <tr v-for="row in rows" :key="String(row.id)">
-          <td v-for="column in columns" :key="column">{{ row[column] ?? '—' }}</td>
+          <td v-for="column in columns" :key="column">{{ display(row, column) }}</td>
           <td>{{ row.status }}</td>
           <td class="row-actions">
             <button
@@ -64,7 +64,7 @@
     </table>
 
     <footer class="page-foot">
-      <span>共 {{ total }} 条巡检记录记录</span>
+      <span>共 {{ total }} 条巡检记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
   </section>
@@ -82,16 +82,26 @@ import {
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('inspection')
-const columns = ["记录编号", "站点编号", "巡检日期", "巡检人员", "检查项目", "发现问题", "处理措施", "巡检状态"]
+const columns = ["记录编号", "站点编号", "巡检日期", "巡检人员", "检查项目", "待办类型", "发现问题", "处理措施", "关联记录"]
 const actions = ["完成巡检", "报告故障", "确认处置"]
 const statuses = ["待巡检", "已巡检", "发现故障", "已处置"]
-const stats = [{"label": "本月巡检次数", "value": 0}, {"label": "已巡检站点", "value": 0}, {"label": "待处置故障", "value": 0}]
+const stats = computed(() => [
+  { label: "本月巡检次数", value: rows.value.length },
+  { label: "现场校验待办", value: rows.value.filter((row) => String(row['待办类型'] ?? '') === '现场校验').length },
+  { label: "待处置故障", value: rows.value.filter((row) => String(row.status) === '发现故障').length },
+])
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+
+function display(row: EntryRow, column: string): string {
+  if (column === '待办类型') return String(row['待办类型'] ?? '常规巡检')
+  const value = row[column]
+  return value === undefined || value === '' ? '—' : String(value)
+}
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
