@@ -82,8 +82,8 @@ import {
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('compilation')
-const columns = ["成果编号", "整编年份", "站点编号", "整编类型", "原始记录数", "整编人", "审核人", "整编状态"]
-const actions = ["开始整编", "提交审核", "驳回整编"]
+const columns = ["成果编号", "整编年份", "站点编号", "整编类型", "原始记录数", "取数来源", "取数时间", "整编人", "审核人", "整编状态"]
+const actions = ["开始整编", "蒸发取数", "提交审核", "驳回整编"]
 const statuses = ["待整编", "整编中", "待审核", "已刊印", "已驳回"]
 const stats = [{"label": "待整编年度", "value": 0}, {"label": "整编中年度", "value": 0}, {"label": "已刊印成果", "value": 0}]
 

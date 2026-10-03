@@ -20,6 +20,7 @@ function readStorage(): Record<string, EntryRow[]> {
   }
   try {
     const parsed = JSON.parse(raw) as Record<string, EntryRow[]>
+    // 旧记录缺少「所属班次」不在此回写：班次按观测日期兼容由领域函数 resolveShift 现算，原始值保持不动。
     return { ...fallback, ...parsed }
   } catch {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(fallback))

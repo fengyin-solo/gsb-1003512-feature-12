@@ -47,7 +47,7 @@
           <td>{{ row.status }}</td>
           <td class="row-actions">
             <button
-              v-for="action in actions"
+              v-for="action in availableActions(row)"
               :key="action"
               class="link"
               type="button"
@@ -82,10 +82,10 @@ import {
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('inspection')
-const columns = ["记录编号", "站点编号", "巡检日期", "巡检人员", "检查项目", "发现问题", "处理措施", "巡检状态"]
-const actions = ["完成巡检", "报告故障", "确认处置"]
-const statuses = ["待巡检", "已巡检", "发现故障", "已处置"]
-const stats = [{"label": "本月巡检次数", "value": 0}, {"label": "已巡检站点", "value": 0}, {"label": "待处置故障", "value": 0}]
+const columns = ["记录编号", "任务类型", "站点编号", "巡检日期", "巡检人员", "检查项目", "发现问题", "处理措施", "巡检状态"]
+const actions = ["完成巡检", "现场校验", "报告故障", "确认处置"]
+const statuses = ["待现场校验", "待巡检", "已巡检", "发现故障", "已处置"]
+const stats = [{"label": "待现场校验", "value": 0}, {"label": "本月巡检次数", "value": 0}, {"label": "待处置故障", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
@@ -102,6 +102,14 @@ const statusSummary = computed(() =>
 function resetFilters() {
   filters.value = {}
   reload()
+}
+
+// 现场校验待办只能走「现场校验」闭环；常规巡检记录走原有三个动作。
+function availableActions(row: EntryRow): string[] {
+  if (String(row.status) === '待现场校验') {
+    return ['现场校验']
+  }
+  return actions.filter((action) => action !== '现场校验')
 }
 
 function exportRows() {
